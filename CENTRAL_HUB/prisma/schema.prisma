@@ -11,25 +11,67 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String    @id @default(cuid()) @db.VarChar(100)
+  email         String    @unique @db.VarChar(191)
+  emailVerified DateTime?
   name          String?
   image         String?
+  password      String?   // Hashed password for email/password auth
   role          Role      @default(USER)
+  accounts      Account[]
+  sessions      Session[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
 
+model Account {
+  id                String  @id @default(cuid()) @db.VarChar(100)
+  userId            String  @db.VarChar(100)
+  type              String  // "oauth", "email", etc.
+  provider          String  @db.VarChar(100)  // "google", "facebook", "github", etc.
+  providerAccountId String  @db.VarChar(100)
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid()) @db.VarChar(100)
+  sessionToken String   @unique @db.VarChar(191)
+  userId       String   @db.VarChar(100)
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String   @db.VarChar(100)
+  token      String   @unique @db.VarChar(100)
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 model Category {
-  id            String      @id @default(cuid())
+  id            String      @id @default(cuid()) @db.VarChar(100)
   name          String
   nameRo        String
   nameEn        String?
-  slug          String      @unique
-  parentId      String?
+  slug          String      @unique @db.VarChar(191)
+  parentId      String?     @db.VarChar(100)
   parent        Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   children      Category[]  @relation("CategoryHierarchy")
-  type          String      // "need", "domain", "productType"
+  type          String      @db.VarChar(191)  // "need", "domain", "productType"
   order         Int         @default(0)
   resources     Resource[]  @relation("CategoryToResource")
   createdAt     DateTime    @default(now())
@@ -41,19 +83,19 @@ model Category {
 }
 
 model Resource {
-  id                String      @id @default(cuid())
+  id                String      @id @default(cuid()) @db.VarChar(100)
   title             String
   titleRo           String
   titleEn           String?
   description       String?     @db.Text
   descriptionRo     String?     @db.Text
   descriptionEn     String?     @db.Text
-  type              String      // "pdf", "video", "link", "redirect"
+  type              String      @db.VarChar(191)  // "pdf", "video", "link", "redirect"
   fileUrl           String?     // Pentru PDF/video
   externalLink      String?     // Pentru linkuri externe
   thumbnailUrl      String?     // Thumbnail pentru video/preview
   categories        Category[]  @relation("CategoryToResource")
-  storeAssociation  String?     // "printings", "numlit", "global"
+  storeAssociation  String?     @db.VarChar(191)  // "printings", "numlit", "global"
   metadata          Json?       // Flexibil pentru date suplimentare
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt

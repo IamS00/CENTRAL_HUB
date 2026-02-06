@@ -1,12 +1,6 @@
-// Placeholder for NextAuth configuration
-// Will be implemented in Phase 2
+import NextAuth from 'next-auth';
+import { authOptions } from '@/lib/auth-config';
 
-// This file will contain:
-// - Google OAuth provider configuration
-// - Callbacks for session and JWT
-// - Admin email whitelist checking
-// - User role assignment
+const handler = NextAuth(authOptions);
 
-export const authOptions = {
-  // Configuration to be added
-};
+export { handler as GET, handler as POST };
