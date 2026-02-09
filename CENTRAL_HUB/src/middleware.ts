@@ -1,23 +1,35 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getToken } from 'next-auth/jwt'
 
-// This function can be marked `async` if using `await` inside
-export function middleware(request: NextRequest) {
-  // For now, just allow all requests
-  // Will be implemented with NextAuth in Phase 2
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Check if accessing admin routes
+  if (pathname.startsWith('/admin')) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    })
+
+    // Not authenticated - redirect to home with error
+    if (!token) {
+      const url = new URL('/', request.url)
+      url.searchParams.set('callbackUrl', pathname)
+      url.searchParams.set('error', 'unauthorized')
+      return NextResponse.redirect(url)
+    }
+
+    // Authenticated but not admin - redirect to unauthorized page
+    if (token.role !== 'ADMIN') {
+      const url = new URL('/unauthorized', request.url)
+      return NextResponse.redirect(url)
+    }
+  }
+
   return NextResponse.next()
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/admin/:path*'],
 }

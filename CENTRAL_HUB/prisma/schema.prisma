@@ -63,22 +63,18 @@ model VerificationToken {
 }
 
 model Category {
-  id            String      @id @default(cuid()) @db.VarChar(100)
+  id            Int         @id @default(autoincrement())
   name          String
-  nameRo        String
-  nameEn        String?
+  description   String?     @db.Text
   slug          String      @unique @db.VarChar(191)
-  parentId      String?     @db.VarChar(100)
+  parentId      Int?
   parent        Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   children      Category[]  @relation("CategoryHierarchy")
-  type          String      @db.VarChar(191)  // "need", "domain", "productType"
-  order         Int         @default(0)
   resources     Resource[]  @relation("CategoryToResource")
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
   @@index([parentId])
-  @@index([type])
   @@index([slug])
 }
 
